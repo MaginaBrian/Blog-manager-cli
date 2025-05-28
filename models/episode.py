@@ -1,15 +1,15 @@
-from sqlalchemy import Column, String, Integer, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
-from database.setup import Base, session
+from database.setup import Base
 
 class Episode(Base):
     __tablename__ = 'episodes'
 
     id = Column(Integer, primary_key=True)
     title = Column(String, nullable=False)
-    duration = Column(Integer)  
+    duration = Column(Integer, nullable=False, default=0)
     read = Column(Boolean, default=False)
-    rating = Column(Integer, nullable=True)  
+    rating = Column(Integer, nullable=True)
     note = Column(String, nullable=True)
     blog_id = Column(Integer, ForeignKey('blogs.id'), nullable=False)
 
@@ -20,34 +20,34 @@ class Episode(Base):
                 f"read={self.read}, rating={self.rating}, note='{self.note}')>")
 
     @classmethod
-    def create_episode(cls, title, duration, blog_id):
+    def create_episode(cls, db, title, duration, blog_id):
         episode = cls(title=title, duration=duration, blog_id=blog_id)
-        session.add(episode)
-        session.commit()
+        db.add(episode)
+        db.commit()
         return episode
 
     @classmethod
-    def get_all(cls):
-        return session.query(cls).all()
+    def get_all(cls, db):
+        return db.query(cls).all()
 
     @classmethod
-    def find_by_id(cls, episode_id):
-        return session.query(cls).filter_by(id=episode_id).first()
+    def find_by_id(cls, db, episode_id):
+        return db.query(cls).filter_by(id=episode_id).first()
 
     @classmethod
-    def get_by_blog(cls, blog_id):
-        return session.query(cls).filter_by(blog_id=blog_id).all()
+    def get_by_blog(cls, db, blog_id):
+        return db.query(cls).filter_by(blog_id=blog_id).all()
 
     @classmethod
-    def delete_by_id(cls, episode_id):
-        episode = cls.find_by_id(episode_id)
+    def delete_by_id(cls, db, episode_id):
+        episode = cls.find_by_id(db, episode_id)
         if episode:
-            session.delete(episode)
-            session.commit()
+            db.delete(episode)
+            db.commit()
             return True
         return False
 
-    def update(self, title=None, duration=None, read=None, rating=None, note=None, blog_id=None):
+    def update(self, db, title=None, duration=None, read=None, rating=None, note=None, blog_id=None):
         if title is not None:
             self.title = title
         if duration is not None:
@@ -60,8 +60,8 @@ class Episode(Base):
             self.note = note
         if blog_id is not None:
             self.blog_id = blog_id
-        session.commit()
+        db.commit()
 
-    def mark_read(self):
+    def mark_read(self, db):
         self.read = True
-        session.commit()
+        db.commit()
